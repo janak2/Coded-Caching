@@ -33,7 +33,7 @@ public class FullReclaimedData
 		this.getCodedData(filesrequest);
 		this.generateFile();
 		PostProcessing pp = new PostProcessing();
-		pp.truncteFiles();
+		pp.truncteFiles(userNo);
 	}
 	
 	private void createUsersSuperSet()
@@ -92,30 +92,47 @@ public class FullReclaimedData
 	
 	private void generateFile()
 	{
-		recoveredDir = new File("RecoveredFiles");
 		int returnInt = 0;
-		if(!recoveredDir.exists() && ! recoveredDir.isFile())
-		{
-			try 
-			{
-				recoveredDir.mkdir();
-			} 
-			catch (Exception e) 
-			{
-				// handle exception
-				System.out.println("Couldn't create \"RecoveredFiles\" Folder");
-			}	
-		}
-		for(File file: recoveredDir.listFiles()) file.delete(); // delete all previous files in recovered folder
-		
 		File getCodedFile = new File(GetCodedData.thedir.getPath()+"/codedTransmittedfile.txt");
 		System.out.println("Total Data transmitted: "+ getCodedFile.length()/1000000.0+ " MB");
+
+		for(int user = 1; user <= userNo; user++)
+		{
+			File userdir = new File("Users/User"+Integer.toString(user));
+			if(!userdir.exists() && ! userdir.isFile())
+			{
+				try 
+				{
+					userdir.mkdir();
+				} 
+				catch (Exception e) 
+				{
+					// handle exception
+					System.out.println("Couldn't create \"CacheFiles\" User's Folder");
+				}	
+			}
+
+			recoveredDir = new File(userdir.getPath() + "/RecoveredFiles");
+			if(!recoveredDir.exists() && ! recoveredDir.isFile())
+			{
+				try 
+				{
+					recoveredDir.mkdir();
+				} 
+				catch (Exception e) 
+				{
+					// handle exception
+					System.out.println("Couldn't create \"RecoveredFiles\" Folder");
+				}	
+			}
+			for(File file: recoveredDir.listFiles()) file.delete(); // delete all previous files in recovered folder
+		}
 		
 		for (int user = 0; user < userNo; user++) 
 		{
 			try 
 			{
-				File recoveredFile = new File(recoveredDir.getPath()+"/"+filesrequest[user]);
+				File recoveredFile = new File("Users/User"+Integer.toString(user+1)+"/RecoveredFiles/"+filesrequest[user]);
 				recoveredFile.createNewFile();
 				FileInputStream getCodedFileIn = new FileInputStream(getCodedFile);
 				byte[] receivers = new byte[ServerData.BYTE_CACHEMAP_LENGTH];
@@ -131,8 +148,8 @@ public class FullReclaimedData
 					{
 						DecodeData(recoveredFile, codedBytebuffer, user, userSet);
 					}		
-				} 
-				File fl_seek = new File(CacheData.theDir.getPath()+"/User"+Integer.toString(user+1)+"/"+filesrequest[user]);
+				}
+				File fl_seek = new File(CacheData.theDir.getPath()+"/User"+Integer.toString(user+1)+"/CacheFiles/"+filesrequest[user]);
 				InputStream cacheStream = new FileInputStream(fl_seek);
 				WriteDataBlocksFromStream(cacheStream, recoveredFile);
 			} 
@@ -169,7 +186,7 @@ public class FullReclaimedData
 			{
 				BitSet cachemap = CodedTransmission.createthisCacheMap(userNo, u, S);
 				//user looking for the cache bytes, bytes required by "u" cached at "user" with this cacheMap "cachemap"
-				File fl_seek = new File(CacheData.theDir.getPath()+"/User"+Integer.toString(userid+1)+"/"+filesrequest[u]);
+				File fl_seek = new File(CacheData.theDir.getPath()+"/User"+Integer.toString(userid+1)+"/CacheFiles/"+filesrequest[u]);
 				CachedBits.xor(CodedTransmission.getAssociatedBitsToThisCacheMap(fl_seek, cachemap)); 
 			}
 		}
@@ -225,27 +242,31 @@ public class FullReclaimedData
 	
 	class PostProcessing
 	{
-		private void truncteFiles()
+		private void truncteFiles(int userNo)
 		{
-			for(File file: recoveredDir.listFiles())
+			for(int user = 1; user <= userNo; user++)
 			{
-				try 
-				{ 
-					RandomAccessFile fn = new RandomAccessFile(file, "rw");
-					long fileLength = ServerData.serverFilesLenghtTable.get(file.getName());
-					fn.setLength(fileLength);
-				} 
-				catch (FileNotFoundException e) 
+				File userdir = new File("Users/User"+Integer.toString(user)+"/RecoveredFiles");
+				for(File file: userdir.listFiles())
 				{
-					e.printStackTrace();
-				} 
-				catch (IOException e) 
-				{
-					e.printStackTrace();
+					try 
+					{ 
+						RandomAccessFile fn = new RandomAccessFile(file, "rw");
+						long fileLength = ServerData.serverFilesLenghtTable.get(file.getName());
+						fn.setLength(fileLength);
+					} 
+					catch (FileNotFoundException e) 
+					{
+						e.printStackTrace();
+					} 
+					catch (IOException e) 
+					{
+						e.printStackTrace();
+					}
 				}
 			}
 		}
-		
+
 		private boolean ComapreTwoFiles(File one, File two) throws IOException
 		{
 			//character Input stream class

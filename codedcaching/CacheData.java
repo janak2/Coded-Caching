@@ -9,7 +9,7 @@ import java.util.HashMap;
 
 public class CacheData 
 {
-	public static File theDir= null;
+	public static File theDir= new File("Users");
 	public static File thesubDir = null;
 	private String[]  filerequest;
 	private File[] serverfiles;
@@ -34,24 +34,11 @@ public class CacheData
 	
 	private void createCacheFiles()
 	{
-		theDir = new File("CacheFiles");
-		
-		if(!theDir.exists() && ! theDir.isFile())
-		{
-			try 
-			{
-				theDir.mkdir();
-			} 
-			catch (Exception e) 
-			{
-				// handle exception
-				System.out.println("Couldn't create \"CacheFiles\" Folder");
-			}	
-		}
+		ArrayList<String> ServerFilesNames = ServerData.getAllServerFileNames(); 
 		
 		for(int user = 1; user <= usersCount; user++)
 		{
-			File userdir = new File("CacheFiles/User"+Integer.toString(user));
+			File userdir = new File("Users/User"+Integer.toString(user));
 			if(!userdir.exists() && ! userdir.isFile())
 			{
 				try 
@@ -65,17 +52,26 @@ public class CacheData
 				}	
 			}
 			for(File file: userdir.listFiles()) file.delete(); // delete all previous files in cache folder
-		}
-
-		ArrayList<String> ServerFilesNames = ServerData.getAllServerFileNames(); 
-		
-		for (int userid = 1; userid <= usersCount; ++userid) 
-		{
+			
+			File dir = new File( userdir.getPath() + "/CacheFiles");
+			if(!dir.exists() && ! dir.isFile())
+			{
+				try 
+				{
+					dir.mkdir();
+				} 
+				catch (Exception e) 
+				{
+					// handle exception
+					System.out.println("Couldn't create \"CacheFiles\" Folder");
+				}	
+			}
+			
 			try 
 			{
 				for(int cacfile = 0; cacfile < serverFileCount; cacfile++)
 				{
-					File createFile = new File(theDir.getPath()+"/User"+Integer.toString(userid)+"/"+ServerFilesNames.get(cacfile));
+					File createFile = new File(dir.getPath()+"/"+ServerFilesNames.get(cacfile));
 					createFile.createNewFile();
 				}
 			}
@@ -95,21 +91,23 @@ public class CacheData
 
 	public File[] getAllCacheFiles()
 	{
-		File folder = new File("CacheFiles");
-		return folder.listFiles(); // return fileArray
+		File[] fileList = new File[usersCount]; 
+		for(int user = 1; user <= usersCount; user++)
+		{
+			File file = new File("Users/User"+Integer.toString(user)+ "/CacheFiles");
+			fileList[user-1] = file;
+		}
+		return fileList; // return fileArray
 	}
 	
 	public File getNthUserCacheFile(int k)
 	{
-		File folder = new File("CacheFiles");
-		File[] fileList = folder.listFiles();
-	
 		if( k > 0 && k <= usersCount)
 		{
-			return fileList[k];
+			File folder = new File("Users/User"+Integer.toString(k)+ "/CacheFiles");
+			return folder;
 		}
-	
-		return fileList[k % (usersCount+1)];
+		return null;
 	}
 	
 	public boolean checkFileCached()

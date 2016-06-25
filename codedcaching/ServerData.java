@@ -38,7 +38,8 @@ public class ServerData
 	
 	private void bakeServerFiles()
 	{
-		File theTempDir = new File("TempServerFiles");
+		File theTempDir = new File("Server/TempServerFiles");
+		
 		if(!theTempDir.exists() && ! theTempDir.isFile())
 		{
 			try 
@@ -51,10 +52,9 @@ public class ServerData
 				System.out.println("Couldn't create \"TempServerFiles\" Folder");
 			}	 
 		}
-		
 		for(File file: theTempDir.listFiles()) file.delete(); // delete all previous files in server folder
 		
-		File folder = new File("ServerFiles");
+		File folder = new File("Server/ServerFiles");
 		ServerData.servSize = folder.listFiles().length;
 		
 		for (File file : folder.listFiles()) 
@@ -113,13 +113,13 @@ public class ServerData
 	
 	public static File[] getAllServerFiles()
 	{
-		File folder = new File("ServerFiles");
+		File folder = new File("Server/ServerFiles");
 		return folder.listFiles(); // return fileArray
 	}
 
 	public static ArrayList<String> getAllServerFileNames()
 	{
-		File folder = new File("ServerFiles");
+		File folder = new File("Server/ServerFiles");
 		File[] fileList = folder.listFiles();
 		ArrayList<String> file_names = new ArrayList<String>();
 		for(File fl:fileList)
@@ -131,7 +131,7 @@ public class ServerData
 	
 	public static File getNthServerFile(String nme)
 	{
-		File folder = new File("TempServerFiles");
+		File folder = new File("Server/TempServerFiles");
 		boolean fileFound = false;
 		File[] fileList = folder.listFiles();
 		for(File file : fileList){
@@ -147,7 +147,7 @@ public class ServerData
 	
 	public static void beginCaching()
 	{
-		File folder = new File("TempServerFiles");
+		File folder = new File("Server/TempServerFiles");
 		File[] serverFiles = folder.listFiles();
 		
 		for (File file : serverFiles) 
@@ -192,7 +192,7 @@ public class ServerData
 				try 
 				{
 					// write cached blocks to the cache file of this user
-					fileCacheOut = new FileOutputStream(CacheData.theDir.getPath()+"/User"+Integer.toString(usr+1)+"/"+file.getName(), true);
+					fileCacheOut = new FileOutputStream(CacheData.theDir.getPath()+"/User"+Integer.toString(usr+1)+"/CacheFiles/"+file.getName(), true);
 				} 
 				catch (FileNotFoundException e1) 
 				{
@@ -231,35 +231,49 @@ public class ServerData
 	{
 		int returnInt = 0;
 		RandomAccessFile fileIn = null;
-		try {
+		
+		try 
+		{
 			fileIn = new RandomAccessFile(file, "rw");
-		} catch (FileNotFoundException e) {
+		} 
+		catch (FileNotFoundException e) 
+		{
 			e.printStackTrace();
 		}
+		
 		byte[] buff = new byte[SKIP_LENGTH + BLOCK_SIZE];
 		HashMap<String, BitSet > key = new HashMap<String, BitSet >();
-		try {
-			while((returnInt = fileIn.read(buff, 0, buff.length))!=-1){
+		
+		try 
+		{
+			while((returnInt = fileIn.read(buff, 0, buff.length))!=-1)
+			{
 				byte[] buffCacheMap = new byte[ServerData.BYTE_CACHEMAP_LENGTH];
 				System.arraycopy(buff, ServerData.BLOCK_SIZE + ServerData.BYTE_IDENTITY_LENGTH, buffCacheMap, 0, ServerData.BYTE_CACHEMAP_LENGTH);
 				key.put(file.getName(), BitSet.valueOf(buffCacheMap));
 				ArrayList<Byte> value = ServerData.serverDataTable.get(key);
-				if(value == null){
+				if(value == null)
+				{
 					// mapping is not present for the key
 					ArrayList<Byte> firstEntry = new ArrayList<Byte>();
-					for(int idx = 0; idx < buff.length; idx++){
+					for(int idx = 0; idx < buff.length; idx++)
+					{
 						firstEntry.add(buff[idx]);
-					}
+					}	
 					ServerData.serverDataTable.put(key, firstEntry);
 				}
-				else{
-					for(int idx = 0; idx < buff.length; idx++){
+				else
+				{
+					for(int idx = 0; idx < buff.length; idx++)
+					{
 						value.add(buff[idx]);
 					}
 					ServerData.serverDataTable.put(key, value);
 				}
 			}
-		} catch (IOException e) {
+		} 
+		catch (IOException e) 
+		{
 			e.printStackTrace();
 		}	 
 	}
